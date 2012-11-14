@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   double sr = 22050;
   double phase = 0;
   double phase_incr;// = freq * TWOPI / sr;
-  double tempo = 120 * 2;
+  double tempo = 140;
   int c;
   int d;
   int prevc = 0;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     {52, 2}
   };
 
-  int note_count = 21;
+  int note_count = sizeof(melody) / sizeof(Note);
   int curnote = 0;
   double t = 0;
   double t_incr = (tempo / 60) / sr;
