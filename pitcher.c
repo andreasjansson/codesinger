@@ -29,7 +29,7 @@ typedef struct {
 
 inline bool space_at(double phase)
 {
-  return phase > M_PI;
+  return phase > M_PI / 6;
 }
 
 inline void phase_add(double *phase, double incr)
@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
       else if(!isspace(c) && isspace(prevc)) {
         while(space_at(phase)) {
           putchar(' ');
+          t += t_incr;
           phase_add(&phase, phase_incr);
         }
       }
