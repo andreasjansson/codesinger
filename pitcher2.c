@@ -1,3 +1,5 @@
+// sox free-software-song.new2.ogg -u -t raw -r 44100 -c1 - lowpass 1000 > song.raw
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -24,7 +26,7 @@ typedef enum {
 
 inline bool space_at(int c)
 {
-  return c < 100;
+  return c < (1 << 15) + (1 << 10);
 }
 
 inline void phase_add(double *phase, double incr)
@@ -34,22 +36,21 @@ inline void phase_add(double *phase, double incr)
     *phase -= TWOPI;
 }
 
-inline int target_getc(FILE *file)
+inline int target_getbyte(FILE *file)
 {
-  int c = fgetc(file);
-  if(c == EOF) {
+  int c1 = fgetc(file);
+  int c2 = fgetc(file);
+  if(c1 == EOF || c2 == EOF) {
     rewind(file);
-    c = fgetc(file);
+    c1 = fgetc(file);
+    c2 = fgetc(file);
   }
-  return c;
+
+  return (c2 << 8) + c1;
 }
 
 int main(int argc, char *argv[])
 {
-  double sr = 22050;
-  double phase = 0;
-  double phase_incr;// = freq * TWOPI / sr;
-  double tempo = 140;
   int c;
   int d;
   int prevc = 0;
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
 
   while((c = fgetc(stdin)) != EOF) {
 
-    t = target_getc(target);
+    t = target_getbyte(target);
 
     switch(state) {
     case in_code:
@@ -81,7 +82,7 @@ int main(int argc, char *argv[])
       else if(!isspace(c) && isspace(prevc)) {
         while(space_at(t)) {
           putchar(' ');
-          t = target_getc(target);
+          t = target_getbyte(target);
         }
       }
       else if(isspace(c) && !space_at(t)) {
