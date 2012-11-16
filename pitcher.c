@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     {52, 2}
   };
 
-  int note_count = 21;
+  int note_count = sizeof(melody) / sizeof(Note);
   int curnote = 0;
   double t = 0;
   double t_incr = (tempo / 60) / sr;
