@@ -22,14 +22,9 @@ typedef enum {
   true
 } bool;
 
-typedef struct {
-  double pitch;
-  double dur;
-} Note;
-
-inline bool space_at(double phase)
+inline bool space_at(int c)
 {
-  return phase > M_PI / 6;
+  return c < 100;
 }
 
 inline void phase_add(double *phase, double incr)
@@ -39,9 +34,14 @@ inline void phase_add(double *phase, double incr)
     *phase -= TWOPI;
 }
 
-inline double pitch_to_phase_incr(double pitch, double sr)
+inline int target_getc(FILE *file)
 {
-  return C_0 * pow(2, pitch / 12) * TWOPI / sr;
+  int c = fgetc(file);
+  if(c == EOF) {
+    rewind(file);
+    c = fgetc(file);
+  }
+  return c;
 }
 
 int main(int argc, char *argv[])
@@ -54,48 +54,12 @@ int main(int argc, char *argv[])
   int d;
   int prevc = 0;
   State state = in_code;
-
-  Note melody[] = {
-    {55, 1},
-    {53, .5},
-    {52, 1},
-    {50, 1},
-    {52, 1},
-    {53, .5},
-    {52, .5},
-    {50, .5},
-    {48, 1},
-    {48, 1.5},
-    {50, 1},
-    {52, 1},
-    {53, 1.5},
-    {52, 1},
-    {55, 1},
-    {50, 1.5},
-    {50, 1},
-    {50, 1},
-    {55, 1},
-    {53, .5},
-    {52, 2}
-  };
-
-  int note_count = 21;
-  int curnote = 0;
-  double t = 0;
-  double t_incr = (tempo / 60) / sr;
-
-  phase_incr = pitch_to_phase_incr(melody[curnote].pitch, sr);
+  int t;
+  FILE *target = fopen("song.raw", "r");
 
   while((c = fgetc(stdin)) != EOF) {
 
-    if(t >= melody[curnote].dur) {
-      t -= melody[curnote].dur;
-      curnote ++;
-      if(curnote >= note_count)
-        curnote = 0;
-      phase_incr = pitch_to_phase_incr(melody[curnote].pitch, sr);
-    }
-    t += t_incr;
+    t = target_getc(target);
 
     switch(state) {
     case in_code:
@@ -115,13 +79,12 @@ int main(int argc, char *argv[])
         state = in_single_line_comment;
       }
       else if(!isspace(c) && isspace(prevc)) {
-        while(space_at(phase)) {
+        while(space_at(t)) {
           putchar(' ');
-          t += t_incr;
-          phase_add(&phase, phase_incr);
+          t = target_getc(target);
         }
       }
-      else if(isspace(c) && !space_at(phase)) {
+      else if(isspace(c) && !space_at(t)) {
         while((d = fgetc(stdin)) != EOF && isspace(d))
           ;
         ungetc(d, stdin);
@@ -150,7 +113,6 @@ int main(int argc, char *argv[])
     }
 
     putchar(c);
-    phase_add(&phase, phase_incr);
 
     if((state == in_single_quote || state == in_double_quote) && c == '\\' && prevc == '\\')
       prevc = 0;
