@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
+#include <string.h>
 
 #ifndef M_PI
 #define M_PI  3.14159265358979323846
@@ -49,6 +51,11 @@ inline int target_getbyte(FILE *file)
   return (c2 << 8) + c1;
 }
 
+void usage()
+{
+  fprintf(stderr, "Usage: pitcher2 -t TARGET\n");
+}
+
 int main(int argc, char *argv[])
 {
   int c;
@@ -56,7 +63,30 @@ int main(int argc, char *argv[])
   int prevc = 0;
   State state = in_code;
   int t;
-  FILE *target = fopen("song.raw", "r");
+  char *target_filename = NULL;
+  FILE *target;
+  int opt;
+
+  while((opt = getopt(argc, argv, "t:")) != -1) {
+    switch(opt) {
+    case 't':
+      target_filename = strdup(optarg);
+      break;
+    default:
+      usage();
+      exit(1);
+    }
+  }
+
+  if(!target_filename) {
+    usage();
+    exit(1);
+  }
+
+  if(!(target = fopen(target_filename, "r"))) {
+    fprintf(stderr, "No such file: %s\n", target_filename);
+    exit(1);
+  }
 
   while((c = fgetc(stdin)) != EOF) {
 
@@ -86,8 +116,12 @@ int main(int argc, char *argv[])
         }
       }
       else if(isspace(c) && !space_at(t)) {
-        while((d = fgetc(stdin)) != EOF && isspace(d))
-          ;
+        while((d = fgetc(stdin)) != EOF && isspace(d)) {
+          // if there's a newline, we should output that rather than
+          // other spaces. this is for preprocessor statements.
+          if(d == '\n')
+            c = d;
+        }
         ungetc(d, stdin);
       }
       break;
