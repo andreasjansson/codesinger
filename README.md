@@ -12,9 +12,9 @@ Usage
 
 `threshold` is a number in the range [-1, 1] that defines at what target amplitude spaces will be inserted. The higher the value, the sparser the output waveform. Typically, `threshold` should be between [0, .3].
 
-`target` is an audio file, in a format understood by libsndfile, e.g. WAV, AIFF, AU, etc. The sampling rate of `target` will be matched in `outfile`.
+`target` is an audio file, in a format understood by libsndfile, e.g. WAV, AIFF, AU, etc.
 
-`infile` is the input source code; `outfile` is the modified source code.
+`infile` is the input source code; `outfile` is the modified source code as a raw audio file with 8 bit depth and the same sample rate as `target`.
 
 Syntax considerations
 ---------------------
