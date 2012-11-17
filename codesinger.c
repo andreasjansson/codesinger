@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 #define APPNAME "codesinger"
+#define MAX_CHANNELS 2
 
 typedef enum {
   in_code,
@@ -21,14 +22,14 @@ inline bool space_at(float sample, float threshold)
   return sample < threshold;
 }
 
-inline float get_sample(SNDFILE *file)
+inline float get_sample(SNDFILE *file, int channels)
 {
-  float s;
-  if(sf_read_float(file, &s, 1) == 0) {
+  static float s[MAX_CHANNELS];
+  if(sf_read_float(file, s, channels) == 0) {
     sf_seek(file, 0, SEEK_SET);
-    sf_read_float(file, &s, 1);
+    sf_read_float(file, s, channels);
   }
-  return s;
+  return s[0];
 }
 
 void usage()
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 
   while((c = fgetc(stdin)) != EOF) {
 
-    sample = get_sample(target);
+    sample = get_sample(target, sf_info.channels);
 
     switch(state) {
     case in_code:
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
       else if(!isspace(c) && isspace(prevc)) {
         while(space_at(sample, threshold)) {
           putchar(' ');
-          sample = get_sample(target);
+          sample = get_sample(target, sf_info.channels);
         }
       }
       else if(isspace(c) && !space_at(sample, threshold)) {
