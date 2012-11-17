@@ -1,16 +1,10 @@
-// sox free-software-song.new2.ogg -t wav -r 44100 -c1 song.wav lowpass 1000
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <unistd.h>
 #include <string.h>
 #include <sndfile.h>
 #include <ctype.h>
-
-#ifndef M_PI
-#define M_PI  3.14159265358979323846
-#endif
+#include <stdbool.h>
 
 #define APPNAME "codesinger"
 
@@ -22,14 +16,9 @@ typedef enum {
   in_multi_line_comment
 } State;
 
-typedef enum {
-  false,
-  true
-} bool;
-
-inline bool space_at(float sample)
+inline bool space_at(float sample, float threshold)
 {
-  return sample < .1;
+  return sample < threshold;
 }
 
 inline float get_sample(SNDFILE *file)
@@ -44,7 +33,7 @@ inline float get_sample(SNDFILE *file)
 
 void usage()
 {
-  fprintf(stderr, "Usage: %s -t TARGET\n", APPNAME);
+  fprintf(stderr, "Usage: %s [-t threshold] target\n", APPNAME);
 }
 
 int main(int argc, char *argv[])
@@ -58,11 +47,12 @@ int main(int argc, char *argv[])
   SNDFILE *target;
   int opt;
   SF_INFO sf_info;
+  float threshold = 0;
 
   while((opt = getopt(argc, argv, "t:")) != -1) {
     switch(opt) {
     case 't':
-      target_filename = strdup(optarg);
+      threshold = atof(optarg);
       break;
     default:
       usage();
@@ -70,10 +60,12 @@ int main(int argc, char *argv[])
     }
   }
 
-  if(!target_filename) {
+  if(argc - optind != 1) {
     usage();
     exit(1);
   }
+
+  target_filename = argv[optind];
 
   if(!(target = sf_open(target_filename, SFM_READ, &sf_info))) {
     fprintf(stderr, "No such file: %s\n", target_filename);
@@ -102,12 +94,12 @@ int main(int argc, char *argv[])
         state = in_single_line_comment;
       }
       else if(!isspace(c) && isspace(prevc)) {
-        while(space_at(sample)) {
+        while(space_at(sample, threshold)) {
           putchar(' ');
           sample = get_sample(target);
         }
       }
-      else if(isspace(c) && !space_at(sample)) {
+      else if(isspace(c) && !space_at(sample, threshold)) {
         while((d = fgetc(stdin)) != EOF && isspace(d)) {
           // if there's a newline, we should output that rather than
           // other spaces. this is for preprocessor statements.

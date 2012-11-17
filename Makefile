@@ -1,4 +1,4 @@
-LIBS = -lm -lsndfile
+LIBS = -lsndfile
 CFLAGS = -Wall -g
 LDFLAGS = ${LIBS}
 CC = gcc
